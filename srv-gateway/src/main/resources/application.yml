@@ -2,7 +2,7 @@ spring:
   application:
     name: api-gateway
 
-  ##GATEWAY CONFIGURATIONS
+  ## GATEWAY CONFIGURATIONS
   cloud:
     gateway:
       routes:
@@ -13,6 +13,10 @@ spring:
             - Path=/api/service1/**
           filters:
             - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: service1CircuitBreaker
+                fallbackUri: forward:/fallback
 
         ## Service2
         - id: service2
@@ -21,6 +25,10 @@ spring:
             - Path=/api/service2/**
           filters:
             - StripPrefix=2
+            - name: CircuitBreaker
+              args:
+                name: service2CircuitBreaker
+                fallbackUri: forward:/fallback
 
 server:
   port: 8080
@@ -29,3 +37,26 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      service1CircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5000ms
+        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 5
+        eventConsumerBufferSize: 5
+
+      service2CircuitBreaker:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 1000ms
+        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 5
+        eventConsumerBufferSize: 5
+
+
